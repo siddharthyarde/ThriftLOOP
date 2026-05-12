@@ -22,6 +22,7 @@ the Supabase CLI):
 14. `202605120014_create_vouches.sql`
 15. `202605120015_create_sustainability_log.sql`
 16. `202605120016_functions_triggers.sql`
+17. `202605120017_increment_listing_views_rpc.sql`
 
 ## Storage buckets
 

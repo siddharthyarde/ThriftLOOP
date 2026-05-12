@@ -21,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Routes ───────────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
 app.use('/api/listings',     require('./routes/listings'));
+app.use('/api/uploads',      require('./routes/uploads'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/swap',         require('./routes/swap'));
 app.use('/api/rental',       require('./routes/rental'));
