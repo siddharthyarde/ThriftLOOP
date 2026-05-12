@@ -1,0 +1,18 @@
+{
+  "claudeCode.initialPermissionMode": "plan",
+  "claudeCode.preferredLocation": "sidebar",
+  "claudeCode.autosave": true,
+  "claudeCode.respectGitIgnore": true,
+  "claudeCode.useCtrlEnterToSend": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    },
+    "render": {
+      "type": "http",
+      "url": "https://mcp.render.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${RENDER_API_KEY:-}"
+      }
+    },
+    "razorpay": {
+      "type": "http",
+      "url": "https://mcp.razorpay.com/mcp",
+      "headers": {
+        "Authorization": "Basic ${RAZORPAY_MERCHANT_TOKEN:-}"
+      }
+    },
+    "shiprocket": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PROJECT_DIR:-.}/mcp/shiprocket-server.mjs"
+      ],
+      "env": {
+        "SHIPROCKET_EMAIL": "${SHIPROCKET_EMAIL:-}",
+        "SHIPROCKET_PASSWORD": "${SHIPROCKET_PASSWORD:-}",
+        "SHIPROCKET_TOKEN": "${SHIPROCKET_TOKEN:-}"
+      }
+    },
+    "stytch": {
+      "type": "http",
+      "url": "https://mcp.stytch.dev/mcp"
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN:-}"
+      }
+    },
+    "postman": {
+      "type": "http",
+      "url": "https://mcp.postman.com/code"
+    },
+    "netlify": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@netlify/mcp"
+      ],
+      "env": {
+        "NETLIFY_PERSONAL_ACCESS_TOKEN": "${NETLIFY_PERSONAL_ACCESS_TOKEN:-}"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${CLAUDE_PROJECT_DIR:-.}"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp"
+    },
+    "stripe": {
+      "type": "http",
+      "url": "https://mcp.stripe.com"
+    }
+  }
+}

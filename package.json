@@ -1,0 +1,19 @@
+{
+  "name": "thrift-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "mcp:shiprocket": "node mcp/shiprocket-server.mjs",
+    "dev:client": "npm --workspace client run start",
+    "dev:server": "npm --workspace server run dev",
+    "seed": "npm --workspace server run seed"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.22.0"
+  }
+}

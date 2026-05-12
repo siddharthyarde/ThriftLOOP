@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.mcp.example
+!.env.example
+!**/.env.example
+
+# Build outputs
+build/
+dist/
+.next/
+out/
+coverage/
+client/build/
+client/dist/
+server/dist/
+
+# Test and tool output
+playwright-report/
+test-results/
+.nyc_output/
+
+# Framework and deployment caches
+.cache/
+.vite/
+.parcel-cache/
+.turbo/
+.vercel/
+.netlify/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+*.swp
+*.swo
+
+# Local-only files
+*.local
