@@ -1,0 +1,9 @@
+{
+  "short_name": "Thrift",
+  "name": "AI-Powered Thrift Marketplace",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#22c55e",
+  "background_color": "#ffffff"
+}
