@@ -6,6 +6,7 @@ import api from '../lib/api';
 import TrustScore from '../components/TrustScore';
 import TryOnModal from '../components/TryOnModal';
 import ConditionBadge from '../components/ConditionBadge';
+import ChatWindow from '../components/ChatWindow';
 
 const trackRecentlyViewed = (listingId) => {
   const key  = 'recently_viewed';
@@ -188,6 +189,7 @@ const ListingDetail = () => {
               >
                 👗 Virtual Try-On
               </button>
+              <ChatWindow sellerId={listing.seller_id} listingId={listing.id} sellerName={listing.users?.name} />
             </div>
           ) : (
             <div className="flex gap-3">
