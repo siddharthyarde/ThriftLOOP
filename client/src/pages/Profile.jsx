@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import TrustScore from '../components/TrustScore';
+import SustainabilityScore from '../components/SustainabilityScore';
 
 const Profile = () => {
   const { profile, fetchProfile } = useAuth();
@@ -95,6 +96,8 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      <div className="mb-6"><SustainabilityScore userId={profile.id} /></div>
 
       <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1">
         {['profile', 'photos'].map(t => (

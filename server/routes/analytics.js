@@ -2,6 +2,27 @@ const express = require('express');
 const router = express.Router();
 const authGuard = require('../middleware/authGuard');
 const supabase = require('../services/supabase');
+const { getUserImpact } = require('../utils/sustainability');
+
+router.get('/sustainability', async (req, res, next) => {
+  try {
+    const { user_id } = req.query;
+
+    if (user_id) {
+      const impact = await getUserImpact(user_id);
+      return res.json(impact);
+    }
+
+    const { data } = await supabase.from('sustainability_log').select('co2_saved_kg, water_saved_l');
+    const co2 = (data || []).reduce((s, l) => s + l.co2_saved_kg, 0);
+    const water = (data || []).reduce((s, l) => s + l.water_saved_l, 0);
+    res.json({
+      co2_saved: parseFloat(co2.toFixed(2)),
+      water_saved: Math.round(water),
+      transactions: data?.length || 0,
+    });
+  } catch (err) { next(err); }
+});
 
 // GET /api/analytics/seller — seller dashboard stats
 router.get('/seller', authGuard, async (req, res, next) => {
