@@ -18,6 +18,7 @@ import OrderTracking from './pages/OrderTracking';
 import AdminPanel from './pages/AdminPanel';
 import StyleQuiz from './pages/StyleQuiz';
 import SellerDashboard from './pages/SellerDashboard';
+import DisputeFilePage from './pages/DisputeFilePage';
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
@@ -51,6 +52,7 @@ const App = () => (
         <Route path="/order/:id"      element={<PrivateRoute><OrderTracking /></PrivateRoute>} />
         <Route path="/style-quiz"     element={<PrivateRoute><StyleQuiz /></PrivateRoute>} />
         <Route path="/dashboard"      element={<PrivateRoute><SellerDashboard /></PrivateRoute>} />
+        <Route path="/dispute/:txnId" element={<PrivateRoute><DisputeFilePage /></PrivateRoute>} />
 
         {/* Admin */}
         <Route path="/admin"          element={<AdminRoute><AdminPanel /></AdminRoute>} />

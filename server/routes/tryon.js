@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const authGuard = require('../middleware/authGuard');
+const {
+  performTryOn,
+  getTryOnHistory,
+  submitFitFeedback,
+  saveTryOnResult,
+} = require('../controllers/tryonController');
 
-// Placeholder — API4AI virtual try-on implemented in the Try-On module.
-router.get('/', (req, res) => res.json({ module: 'tryon', status: 'not_implemented' }));
+router.post('/',            authGuard, performTryOn);
+router.get('/history',      authGuard, getTryOnHistory);
+router.put('/:id/feedback', authGuard, submitFitFeedback);
+router.put('/:id/save',     authGuard, saveTryOnResult);
 
 module.exports = router;
