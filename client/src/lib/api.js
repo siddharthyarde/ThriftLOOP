@@ -2,7 +2,7 @@ import axios from 'axios';
 import supabase from './supabaseClient';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000',
 });
 
 // Attach Supabase JWT to every request

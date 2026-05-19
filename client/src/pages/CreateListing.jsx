@@ -2,19 +2,55 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../lib/api';
-import PhotoGuidelines from '../components/PhotoGuidelines';
+import { Photo } from '../components/Shared';
+import * as I from '../components/Icons';
 
-const CATEGORIES = ['tops', 'bottoms', 'dress', 'outerwear', 'footwear', 'accessories'];
-const SIZES      = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size', 'Custom'];
-const CONDITIONS = [
-  { value: 'A', label: 'A – Like New',    desc: 'No visible wear, barely used' },
-  { value: 'B', label: 'B – Gently Used', desc: 'Minor signs of wear, great condition' },
-  { value: 'C', label: 'C – Good',        desc: 'Noticeable wear, fully functional' },
-  { value: 'D', label: 'D – Fair',        desc: 'Heavy wear, priced accordingly' },
+const GRADES = [
+  { id:"A", l:"Like New",  d:"Worn once or twice, no flaws" },
+  { id:"B", l:"Good",      d:"Minor signs of wear, no defects" },
+  { id:"C", l:"Fair",      d:"Noticeable wear, all functional" },
+  { id:"D", l:"Worn",      d:"Visible defects, declare them" },
 ];
-const PHOTO_LABELS = ['Front View', 'Back View', 'Defect / Detail Close-up'];
 
-const CreateListing = () => {
+function FormCard({ step, title, sub, children }) {
+  return (
+    <div className="card" style={{ padding:24, borderRadius:18, background:"var(--surface)" }}>
+      <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:18 }}>
+        <div>
+          <div className="mono" style={{ fontSize:11, color:"var(--ink-mute)", letterSpacing:".15em" }}>{step}</div>
+          <h2 className="serif" style={{ margin:"4px 0 4px", fontSize:26, letterSpacing:"-.005em" }}>{title}</h2>
+          <p className="small muted" style={{ margin:0, fontSize:12.5 }}>{sub}</p>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FieldRow({ label, children }) {
+  return (
+    <div>
+      <label className="small muted" style={{ display:"block", marginBottom:6, fontSize:11, letterSpacing:".08em", textTransform:"uppercase" }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function CheckRow({ done, label }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:10, fontSize:13 }}>
+      <span style={{
+        width:18, height:18, borderRadius:"50%",
+        background: done ? "var(--accent)" : "var(--surface-2)",
+        color: done ? "#fff" : "var(--ink-mute)",
+        display:"flex", alignItems:"center", justifyContent:"center",
+      }}>{done ? <I.Check size={11}/> : <I.Close size={10}/>}</span>
+      <span style={{ color: done ? "var(--ink)" : "var(--ink-mute)" }}>{label}</span>
+    </div>
+  );
+}
+
+export default function CreateListing() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -22,42 +58,27 @@ const CreateListing = () => {
     price: '', available_for: ['buy'], locality: '',
     rental_price_per_day: '', rental_deposit: '',
   });
-
-  const [images, setImages]         = useState([]); // [{file, preview, url, uploading}]
+  const [images, setImages] = useState([null, null, null, null, null]);
+  const [grade, setGrade] = useState('A');
+  const [avail, setAvail] = useState({ buy:true, swap:false, rent:false });
   const [submitting, setSubmitting] = useState(false);
-  const [showGuide, setShowGuide]   = useState(false);
-  const [priceSuggestion]           = useState(null);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const toggleAvailFor = (mode) => {
-    setForm(prev => ({
-      ...prev,
-      available_for: prev.available_for.includes(mode)
-        ? prev.available_for.filter(m => m !== mode)
-        : [...prev.available_for, mode],
-    }));
-  };
+  const SLOT_LABELS = ['Front', 'Back', 'Defect', 'Extra', 'Extra'];
 
   const handlePhotoSelect = async (e, index) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const preview = URL.createObjectURL(file);
-
     const updated = [...images];
     updated[index] = { file, preview, url: null, uploading: true };
     setImages(updated);
-
     const reader = new FileReader();
     reader.onload = async () => {
       try {
         const base64 = reader.result.split(',')[1];
-        const { data } = await api.post('/api/uploads/listing-image', {
-          imageBase64: base64,
-          mimeType: file.type,
-          index,
-        });
+        const { data } = await api.post('/api/uploads/listing-image', { imageBase64: base64, mimeType: file.type, index });
         setImages(prev => {
           const next = [...prev];
           next[index] = { file, preview, url: data.url, uploading: false };
@@ -66,40 +87,35 @@ const CreateListing = () => {
         toast.success(`Photo ${index + 1} uploaded`);
       } catch {
         toast.error(`Photo ${index + 1} upload failed`);
-        setImages(prev => {
-          const next = [...prev];
-          next[index] = null;
-          return next;
-        });
+        setImages(prev => { const next = [...prev]; next[index] = null; return next; });
       }
     };
     reader.readAsDataURL(file);
   };
 
   const removePhoto = (index) => {
-    setImages(prev => {
-      const next = [...prev];
-      next[index] = null;
-      return next;
-    });
+    setImages(prev => { const next = [...prev]; next[index] = null; return next; });
   };
 
+  const filledPhotos = images.filter(Boolean);
+  const requiredFilled = images.slice(0, 3).filter(Boolean).length;
   const uploadedUrls = images.filter(i => i?.url).map(i => i.url);
-  const canSubmit = uploadedUrls.length >= 3 && form.title && form.category && form.size && form.condition && form.price;
+  const canSubmit = requiredFilled >= 3 && form.title && form.category && form.size && form.price;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (uploadedUrls.length < 3) {
-      return toast.error('Please upload all 3 required photos');
-    }
+    if (uploadedUrls.length < 3) return toast.error('Please upload all 3 required photos');
     setSubmitting(true);
     try {
+      const availFor = Object.entries(avail).filter(([, v]) => v).map(([k]) => k === 'rent' ? 'rental' : k);
       const payload = {
         ...form,
+        condition: grade,
         price: parseFloat(form.price),
         images: uploadedUrls,
-        rental_price_per_day: form.available_for.includes('rental') ? parseFloat(form.rental_price_per_day) : undefined,
-        rental_deposit:       form.available_for.includes('rental') ? parseFloat(form.rental_deposit) : undefined,
+        available_for: availFor,
+        rental_price_per_day: avail.rent ? parseFloat(form.rental_price_per_day) : undefined,
+        rental_deposit:       avail.rent ? parseFloat(form.rental_deposit) : undefined,
       };
       const { data } = await api.post('/api/listings', payload);
       toast.success('Listing created!');
@@ -112,230 +128,231 @@ const CreateListing = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">List an Item</h1>
-      <p className="text-gray-500 text-sm mb-8">Share your pre-loved clothing with the community</p>
+    <>
+      {/* Breadcrumb + heading */}
+      <section style={{ padding:"32px 32px 8px" }}>
+        <div className="small muted" style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ cursor:"pointer" }} onClick={() => navigate('/dashboard')}>Dashboard</span>
+          <I.ChevronR size={12}/>
+          <span style={{ color:"var(--ink)" }}>New listing</span>
+        </div>
+        <h1 className="serif" style={{ margin:"14px 0 4px", fontSize:52, letterSpacing:"-.015em" }}>List an item.</h1>
+        <p className="muted" style={{ margin:0, fontSize:15 }}>A few clean photos, an honest grade, and you're live in 2 minutes.</p>
+      </section>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit}>
+        <section style={{ padding:"24px 32px 120px", display:"grid", gridTemplateColumns:"1.4fr 1fr", gap:28 }}>
+          {/* Left column */}
+          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
-        {/* Photos */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="font-semibold text-gray-800">Photos <span className="text-red-400">*</span></h2>
-            <button type="button" onClick={() => setShowGuide(!showGuide)} className="text-xs text-green-600 underline">
-              Photo guidelines
+            {/* Section 1 — Photos */}
+            <FormCard step="01" title="Photos" sub="3 required · up to 5 total">
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:10 }}>
+                {images.map((img, i) => (
+                  <div key={i} style={{ position:"relative", aspectRatio:"1/1" }}>
+                    {img ? (
+                      <>
+                        <img src={img.preview} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:12, display:"block" }}/>
+                        {img.uploading && (
+                          <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.4)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:11 }}>
+                            uploading…
+                          </div>
+                        )}
+                        <button type="button" onClick={() => removePhoto(i)} className="icon-btn"
+                          style={{ position:"absolute", top:6, right:6, width:24, height:24, background:"color-mix(in srgb, var(--bg) 85%, transparent)" }}>
+                          <I.Close size={12}/>
+                        </button>
+                      </>
+                    ) : (
+                      <label className="lift" style={{
+                        width:"100%", height:"100%", borderRadius:12,
+                        border:`1.5px dashed ${i < 3 ? "var(--accent)" : "var(--border-2)"}`,
+                        background:"transparent", color:"var(--ink-mute)", cursor:"pointer",
+                        display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4,
+                      }}>
+                        <I.Camera size={20}/>
+                        <span className="small" style={{ fontSize:11 }}>{SLOT_LABELS[i]}</span>
+                        {i < 3 && <span style={{ fontSize:10, color:"var(--accent)" }}>required</span>}
+                        <input type="file" accept="image/*" style={{ display:"none" }} onChange={e => handlePhotoSelect(e, i)}/>
+                      </label>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop:14, padding:"6px 0", color:"var(--ink-mute)" }}>
+                <I.Camera size={14}/> Photo guidelines & tips
+              </button>
+            </FormCard>
+
+            {/* Section 2 — Details */}
+            <FormCard step="02" title="Details" sub="The basics — keep it honest.">
+              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                <FieldRow label="Title">
+                  <input className="input" name="title" value={form.title} onChange={handleChange} placeholder="e.g. Vintage Levi's Denim Jacket" required/>
+                </FieldRow>
+                <FieldRow label="Description">
+                  <textarea className="input" name="description" value={form.description} onChange={handleChange}
+                    rows={4} style={{ resize:"vertical", fontFamily:"inherit", lineHeight:1.5 }}
+                    placeholder="Pre-loved condition, lining intact. Pairs well with knits and slip dresses."/>
+                </FieldRow>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+                  <FieldRow label="Category">
+                    <select className="input" name="category" value={form.category} onChange={handleChange} required>
+                      <option value="">Select…</option>
+                      {["Tops","Bottoms","Dresses","Outerwear","Shoes","Bags","Ethnic","Accessories"].map(c => <option key={c} value={c.toLowerCase()}>{c}</option>)}
+                    </select>
+                  </FieldRow>
+                  <FieldRow label="Size">
+                    <select className="input" name="size" value={form.size} onChange={handleChange} required>
+                      <option value="">Select…</option>
+                      {["XS","S","M","L","XL","XXL","One Size"].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </FieldRow>
+                </div>
+
+                <div>
+                  <label className="small muted" style={{ display:"block", marginBottom:8, fontSize:11, letterSpacing:".08em", textTransform:"uppercase" }}>Condition grade</label>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:10 }}>
+                    {GRADES.map(g => {
+                      const on = grade === g.id;
+                      return (
+                        <button key={g.id} type="button" onClick={() => setGrade(g.id)} className="lift"
+                          style={{
+                            padding:14, cursor:"pointer", textAlign:"left",
+                            border:`1.5px solid ${on ? "var(--ink)" : "var(--border)"}`,
+                            background: on ? "var(--surface)" : "var(--bg)",
+                            borderRadius:12, transition:"all .2s ease",
+                          }}>
+                          <div className="serif" style={{ fontSize:28, color: on ? "var(--accent)" : "var(--ink-2)", lineHeight:1 }}>{g.id}</div>
+                          <div style={{ fontSize:13, fontWeight:500, marginTop:8 }}>{g.l}</div>
+                          <div className="small muted" style={{ fontSize:11, marginTop:2, lineHeight:1.4 }}>{g.d}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </FormCard>
+
+            {/* Section 3 — Location & Pricing */}
+            <FormCard step="03" title="Location & pricing" sub="Where it ships from + what you'd like for it.">
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+                <FieldRow label="City">
+                  <input className="input" name="locality" value={form.locality} onChange={handleChange} placeholder="Mumbai"/>
+                </FieldRow>
+                <FieldRow label="Sale price (₹)">
+                  <div style={{ position:"relative" }}>
+                    <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"var(--ink-mute)", fontFamily:"var(--serif)" }}>₹</span>
+                    <input className="input" name="price" value={form.price} onChange={handleChange} type="number" min="0" placeholder="1,899" style={{ paddingLeft:28 }} required/>
+                  </div>
+                </FieldRow>
+              </div>
+              <div style={{ marginTop:14, padding:14, background:"var(--sage)", borderRadius:12, display:"flex", alignItems:"center", gap:12 }}>
+                <I.Spark size={18} style={{ color:"var(--accent)" }}/>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:500 }}>AI price suggestion will appear after you fill in details</div>
+                  <div className="small muted" style={{ fontSize:12 }}>Based on similar items sold recently.</div>
+                </div>
+              </div>
+            </FormCard>
+
+            {/* Section 4 — Availability */}
+            <FormCard step="04" title="Availability" sub="What's possible with this item?">
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                {[
+                  { id:"buy",  l:"Buy",  icon:<I.Cart size={14}/> },
+                  { id:"swap", l:"Swap", icon:<I.Swap size={14}/> },
+                  { id:"rent", l:"Rent", icon:<I.Calendar size={14}/> },
+                ].map(o => (
+                  <button key={o.id} type="button" onClick={() => setAvail({ ...avail, [o.id]: !avail[o.id] })}
+                    className={`chip${avail[o.id] ? " on" : ""}`}
+                    style={{ padding:"10px 18px", fontSize:14 }}>
+                    {o.icon} {o.l}
+                  </button>
+                ))}
+              </div>
+              {avail.rent && (
+                <div className="fade-in" style={{ marginTop:16, display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+                  <FieldRow label="Rent per day (₹)">
+                    <input className="input" name="rental_price_per_day" value={form.rental_price_per_day} onChange={handleChange} placeholder="120"/>
+                  </FieldRow>
+                  <FieldRow label="Security deposit (₹)">
+                    <input className="input" name="rental_deposit" value={form.rental_deposit} onChange={handleChange} placeholder="1,500"/>
+                  </FieldRow>
+                </div>
+              )}
+            </FormCard>
+          </div>
+
+          {/* Right column — preview */}
+          <aside>
+            <div style={{ position:"sticky", top:96 }}>
+              <div className="eyebrow" style={{ marginBottom:14 }}>Live preview</div>
+              <div className="card lift" style={{ padding:14, borderRadius:16 }}>
+                <Photo variant={["ph-soft","ph-warm","ph-dots","ph-stripes","ph-grid"][0]} aspect="4/5" style={{ borderRadius:12 }}>
+                  <div style={{ position:"absolute", top:12, left:12, display:"flex", gap:6 }}>
+                    {avail.swap && <span className="pill" style={{ background:"var(--bg)", fontSize:10 }}>SWAP</span>}
+                    {avail.rent && <span className="pill pill-accent" style={{ fontSize:10 }}>RENT</span>}
+                  </div>
+                  <span className="ph-label" style={{ alignSelf:"flex-end" }}>{form.title || "Your item"}</span>
+                </Photo>
+                <div style={{ padding:"12px 4px 4px" }}>
+                  <div style={{ fontSize:15, fontWeight:500, marginBottom:6 }}>{form.title || "Your item title"}</div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span className="serif" style={{ fontSize:22 }}>₹{form.price || "—"}</span>
+                    <span className="pill" style={{ background:"var(--bg)", fontSize:10, padding:"2px 8px" }}>
+                      <span style={{ color:"var(--accent)", fontWeight:700, marginRight:4 }}>{grade}</span>
+                      {GRADES.find(g => g.id === grade)?.l}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop:16, padding:16, background:"var(--surface)", borderRadius:14 }}>
+                <div className="small muted" style={{ fontSize:11, letterSpacing:".08em", textTransform:"uppercase", marginBottom:10 }}>Listing checklist</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <CheckRow done={requiredFilled >= 3} label="3 required photos uploaded"/>
+                  <CheckRow done={!!form.title} label="Title and description"/>
+                  <CheckRow done={!!(form.category && form.size)} label="Category, size, condition"/>
+                  <CheckRow done={!!form.price} label="Location and price set"/>
+                  <CheckRow done={Object.values(avail).some(Boolean)} label="At least one availability option"/>
+                </div>
+              </div>
+
+              <p className="small muted" style={{ marginTop:14, lineHeight:1.5 }}>
+                Listings are reviewed by our team within 4 hours. Verified sellers go live instantly.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        {/* Sticky submit bar */}
+        <div style={{
+          position:"sticky", bottom:0, left:0, right:0, zIndex:20,
+          padding:"14px 32px",
+          background:"color-mix(in srgb, var(--bg) 92%, transparent)",
+          borderTop:"1px solid var(--border)",
+          backdropFilter:"blur(14px)",
+          display:"flex", alignItems:"center", justifyContent:"space-between", gap:16,
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <div style={{ width:32, height:32, borderRadius:"50%", background:"var(--surface)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)" }}>
+              <I.Camera size={16}/>
+            </div>
+            <div>
+              <div style={{ fontSize:13.5, fontWeight:500 }}>{requiredFilled} of 3 required photos uploaded · {filledPhotos.length} total</div>
+              <div className="small muted" style={{ fontSize:11 }}>{requiredFilled < 3 ? "Add front, back, and defect photos to publish." : "Ready to publish."}</div>
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:10 }}>
+            <button type="button" className="btn" onClick={() => navigate('/dashboard')}>Cancel</button>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={!canSubmit || submitting}
+              style={{ opacity: canSubmit ? 1 : .4 }}>
+              {submitting ? "Publishing…" : <>List item <I.Arrow size={16}/></>}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mb-4">Upload at least 3 photos: front view, back view, and defect close-up.</p>
-
-          {showGuide && <PhotoGuidelines onClose={() => setShowGuide(false)} />}
-
-          <div className="grid grid-cols-3 gap-3">
-            {PHOTO_LABELS.map((label, idx) => (
-              <div key={idx} className="flex flex-col gap-1">
-                <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 hover:border-green-400 transition">
-                  {images[idx]?.preview ? (
-                    <>
-                      <img src={images[idx].preview} alt={label} className="w-full h-full object-cover" />
-                      {images[idx].uploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <span className="text-white text-xs">Uploading…</span>
-                        </div>
-                      )}
-                      {!images[idx].uploading && (
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(idx)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                        >×</button>
-                      )}
-                      {images[idx].url && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-green-500/80 text-white text-[10px] text-center py-0.5">✓</div>
-                      )}
-                    </>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-2">
-                      <span className="text-2xl text-gray-300">📷</span>
-                      <span className="text-[10px] text-gray-400 text-center mt-1">{label}</span>
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoSelect(e, idx)} />
-                    </label>
-                  )}
-                </div>
-                <p className="text-[10px] text-center text-gray-500">{label}</p>
-              </div>
-            ))}
-          </div>
-
-          {images.filter(Boolean).length >= 3 && (
-            <div className="mt-3">
-              <p className="text-xs text-gray-400 mb-2">Add more photos (optional, up to 8 total)</p>
-              <label className="inline-flex items-center gap-1 text-xs text-green-600 cursor-pointer border border-green-200 rounded-lg px-3 py-1.5 hover:bg-green-50">
-                + Add Photo
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoSelect(e, images.length)} />
-              </label>
-            </div>
-          )}
         </div>
-
-        {/* Details */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
-          <h2 className="font-semibold text-gray-800">Details</h2>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-red-400">*</span></label>
-            <input
-              type="text" name="title" value={form.title} onChange={handleChange}
-              placeholder="e.g. Vintage Denim Jacket — Blue, Size M"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              name="description" value={form.description} onChange={handleChange}
-              rows={3} placeholder="Brand, fabric, measurements, reason for selling…"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category <span className="text-red-400">*</span></label>
-              <select name="category" value={form.category} onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400" required>
-                <option value="">Select category</option>
-                {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Size <span className="text-red-400">*</span></label>
-              <select name="size" value={form.size} onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400" required>
-                <option value="">Select size</option>
-                {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Condition <span className="text-red-400">*</span></label>
-            <div className="space-y-2">
-              {CONDITIONS.map(c => (
-                <label
-                  key={c.value}
-                  className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${
-                    form.condition === c.value ? 'border-green-500 bg-green-50' : 'border-gray-100 hover:border-gray-200'
-                  }`}
-                >
-                  <input
-                    type="radio" name="condition" value={c.value}
-                    checked={form.condition === c.value}
-                    onChange={handleChange}
-                    className="mt-0.5 accent-green-500"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{c.label}</p>
-                    <p className="text-xs text-gray-500">{c.desc}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">City / Locality</label>
-            <input
-              type="text" name="locality" value={form.locality} onChange={handleChange}
-              placeholder="e.g. Indore, Mumbai, Bangalore"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
-          <h2 className="font-semibold text-gray-800">Pricing</h2>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (₹) <span className="text-red-400">*</span></label>
-            <input
-              type="number" name="price" value={form.price} onChange={handleChange}
-              placeholder="0" min="1"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-              required
-            />
-            {priceSuggestion && (
-              <p className="text-xs text-green-600 mt-1">
-                💡 Suggested: ₹{priceSuggestion.min}–₹{priceSuggestion.max} (avg ₹{priceSuggestion.avg})
-                based on {priceSuggestion.sample_size} similar sales
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Available For</label>
-            <div className="flex gap-2 flex-wrap">
-              {['buy', 'swap', 'rental'].map(mode => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => toggleAvailFor(mode)}
-                  className={`px-4 py-1.5 rounded-full text-sm border-2 font-medium transition capitalize ${
-                    form.available_for.includes(mode)
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-gray-200 text-gray-500'
-                  }`}
-                >
-                  {mode === 'buy' ? '🛍️ Buy' : mode === 'swap' ? '🔄 Swap' : '📦 Rental'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {form.available_for.includes('rental') && (
-            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rent / Day (₹) <span className="text-red-400">*</span></label>
-                <input
-                  type="number" name="rental_price_per_day"
-                  value={form.rental_price_per_day} onChange={handleChange}
-                  placeholder="0" min="1"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Security Deposit (₹) <span className="text-red-400">*</span></label>
-                <input
-                  type="number" name="rental_deposit"
-                  value={form.rental_deposit} onChange={handleChange}
-                  placeholder="0" min="1"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={!canSubmit || submitting}
-          className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
-        >
-          {submitting ? 'Creating listing…' : 'Publish Listing'}
-        </button>
-
-        {!canSubmit && (
-          <p className="text-xs text-center text-gray-400">
-            {uploadedUrls.length < 3
-              ? `Upload ${3 - uploadedUrls.length} more photo(s) to continue`
-              : 'Fill in all required fields'}
-          </p>
-        )}
       </form>
-    </div>
+    </>
   );
-};
-
-export default CreateListing;
+}

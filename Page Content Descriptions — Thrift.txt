@@ -1,0 +1,234 @@
+Page Content Descriptions — Thrift Marketplace
+NAVBAR (Global — appears on every page)
+A horizontal bar fixed to the top of the screen that is always visible while scrolling.
+
+On the left side: the brand logo, which is a small icon of a clothing hanger followed by the text "thrift" in lowercase.
+
+In the center: a search bar with placeholder text "Search clothes, brands, styles…" and a search icon on the left side of the input.
+
+On the right side (when the user is not logged in): a text link that says "Browse", a text link that says "Swap", a button that says "+ Sell", a button that says "Sign In", and a button that says "Join Thrift".
+
+On the right side (when the user is logged in): a text link that says "Browse", a text link that says "Swap", a button that says "+ Sell", a bell icon button for notifications with a red dot indicating unread count, and a circular avatar button for the current user.
+
+Clicking the bell icon opens a dropdown panel with a list of notifications. Each notification shows a small icon, a short title, a brief description, and a timestamp. Notification types include: new message from another user, a new offer received on a listing, a swap request received, a rental booking request, an escrow payment held, an escrow payment released, a dispute update, and a no-show flag. Unread notifications are visually distinguished from read ones.
+
+Clicking the avatar opens a dropdown menu with the following items: "My Profile", "Dashboard", "Sell Item", an "Admin" option (shown only if the user has an admin role), a divider line, and "Sign Out".
+
+On mobile screens: the center search bar is hidden and the right-side navigation links collapse. A tab bar appears at the bottom of the screen with five items: Home, Browse, a center Sell button, Swap, and Profile.
+
+PAGE 1 — Home / Browse
+A general browsing page that shows all available listings in the marketplace.
+
+At the top, when no search or filter is active, there is a hero section. The hero contains: a small pill label that reads "New drops every day", a large headline that reads "Pre-loved fashion, reimagined.", a one-line supporting sentence that reads "Shop, swap, or rent verified second-hand pieces from real people.", and two side-by-side buttons — one that says "Browse listings" and one that says "🔄 Swap something".
+
+Below the hero (or at the top when filters are active) is a search and filter bar. It contains a text input for keyword search, a button labeled "Filters" that toggles an expanded filter panel, and a dropdown to sort results. When the filter panel is expanded, it shows seven filter controls: Category, Size, Condition, Available For (buy/swap/rent), Minimum Price, Maximum Price, and City. At the bottom of the filter panel are two buttons — "Apply" and "Reset". Any active filters are shown as removable pills (chips) below the filter bar, each with a label and an × button to remove that filter.
+
+Below the filter bar is a "Trending" section with a heading and a row of listing cards for trending items.
+
+Below trending is a "Recently Viewed" section with a heading and a row of listing cards for items the user has viewed before. This section only appears if the user has a viewing history.
+
+Below that is a heading row for "All Listings" and a grid of all listing cards. The grid is paginated. At the bottom of the grid is a pagination control showing numbered page buttons and previous/next arrows.
+
+When no listings match the current filters, a centered empty state is shown with an icon of a piece of clothing, a heading "Nothing here yet", and a subtext "Try different filters".
+
+PAGE 2 — Listing Card (Reusable Component)
+A card that represents a single listing item. Used in grids on the Home, Storefront, SellerDashboard, SwapEngine, and other pages.
+
+The card contains: a square image area that shows the primary photo of the item. On top of the image, in the top-left corner, there are badge pills indicating whether the item is available for swap ("SWAP") and/or rental ("RENT"). If the item is sold or currently rented, a semi-transparent overlay appears over the full image showing the word "SOLD" or "RENTED". Below the image is a content area containing: the item title (truncated to one line), the price displayed in Indian Rupees, a condition badge (Grade A / B / C / D with a short label like "Like New"), and a single line of metadata showing the item's size and city.
+
+PAGE 3 — Login
+A page for existing users to sign in to their account.
+
+At the top of the page is the brand logo (clothing hanger icon + "thrift" text).
+
+Below the logo is a card containing: a heading "Welcome back", a subheading "Sign in to your Thrift account", an email address input field, a password input field with a show/hide password toggle icon inside the field, a link that says "Forgot password?", and a button that says "Sign In". While the form is submitting, the button shows a loading state with the text "Signing in…".
+
+Below the card is a line of text that reads "Don't have an account?" followed by a link "Join Thrift" that goes to the Register page.
+
+PAGE 4 — Register
+A page for new users to create an account.
+
+At the top of the page is the brand logo.
+
+Below the logo is a card containing: a heading "Create your account", a subheading "Join thousands buying and selling sustainably.", a full name input field, an email address input field, a password input field with a show/hide toggle, a password strength indicator (three dots that fill in at different lengths — one dot for short, two for medium, three for strong), a city selector (a dropdown with Indian cities), a line of legal text reading "By joining, you agree to our Terms and Privacy Policy" with links on the words "Terms" and "Privacy Policy", and a button that says "Create Account". While submitting, the button shows "Creating account…".
+
+Below the card is a line of text "Already have an account?" followed by a "Sign in" link.
+
+PAGE 5 — Style Quiz (Onboarding)
+A three-step onboarding quiz shown to new users after registration to personalize their experience.
+
+At the top of the page, there is a thin horizontal progress bar that shows how far along the user is in the quiz. Next to it, right-aligned, is a step counter like "Step 1 of 3".
+
+Each step shows: a question in large text, and a grid of answer options. Each option is a card with a large emoji at the top and a label below it. Multiple options can be selected. The questions are:
+
+Step 1: "What do you usually wear?" — options include Casual, Streetwear, Formal, Ethnic, Bohemian, Sporty.
+Step 2: "What sizes do you wear?" — options include XS, S, M, L, XL, XXL.
+Step 3: "What's your budget range?" — options include Under ₹500, ₹500–₹1500, ₹1500–₹5000, Above ₹5000.
+At the bottom of each step are navigation controls: a "Skip" text link on the left, a "Back" text link (shown from step 2 onward), and a "Next →" button on the right. On the final step, the button reads "Finish & Explore →".
+
+PAGE 6 — Listing Detail
+A full detail page for a single listing item.
+
+On the left side is the image gallery. The gallery has a large main image area and below it a horizontal row of thumbnail images. Clicking a thumbnail changes the main image. In the top-right corner of the main image there is a heart (wishlist) button — outlined when not saved, filled red when saved.
+
+On the right side is the information panel. It contains, from top to bottom:
+
+A row of availability tag pills showing which modes are active for this item: "FOR SALE", "SWAP AVAILABLE", "RENTABLE" — only the applicable ones are shown.
+The item title.
+The sale price in Indian Rupees. Next to the price is the condition badge.
+If the item is rentable, a secondary line showing the rental price per day and the security deposit amount.
+A divider line.
+A metadata grid with two columns and multiple rows showing: Category, Size, Condition (text), and City.
+The item description text. If the description is long, it is truncated after 3 lines with a "Read more" toggle link.
+A row showing engagement stats: number of views and number of saves.
+Five action buttons stacked vertically:
+"Buy Now — ₹[price]" — the primary purchase button.
+"🔄 Propose a Swap" — to initiate a swap offer.
+"📦 Rent This" — to go to the rental booking page.
+"✨ Virtual Try-On" — to try the item on virtually using a photo.
+"💬 Message Seller" — a smaller text-style link below the buttons.
+If the current logged-in user is the owner of the listing, the "Buy Now", "Propose a Swap", and "Rent This" buttons are replaced with "Edit Listing" and "Delist Item" buttons.
+Below the action buttons is a seller card showing: the seller's avatar, their display name, a "✓ Verified" badge if they are verified, their trust score shown as stars, the number of completed sales, and a "View store →" link.
+On mobile, the page is single-column. The action buttons are placed in a sticky bar at the bottom of the screen.
+
+PAGE 7 — Create Listing
+A multi-section form page for sellers to create a new listing.
+
+Above the form is a breadcrumb navigation reading "Dashboard > New Listing" and a page heading "List an item".
+
+The form is divided into four sections, each in its own card:
+
+Section 1 — Photos: A heading "Photos" with a note "(3 required)". Below is a row of photo upload slots. The first three slots are labeled "Front", "Back", and "Defect" — these are required. Additional slots labeled "Extra" can be added up to a total of 8 photos. Each empty slot shows a camera icon and a label. When a photo is uploaded, the slot shows the photo with a remove × button in the corner. There is also a collapsible "📋 Photo guidelines" link below the slots.
+
+Section 2 — Details: Fields for: Title (a single-line text input), Description (a multi-line text area). Below those, a two-column row with Category (a dropdown) and Size (a dropdown). Then a condition selector showing four horizontal option cards labeled Grade A, Grade B, Grade C, and Grade D. Each card shows the grade letter large, a short label (e.g. "Like New", "Good", "Fair", "Worn"), and a brief description. Only one grade can be selected at a time.
+
+Section 3 — Location & Pricing: Two fields side by side — City (text input) and Price (number input in Indian Rupees). Below the price field is a small AI-generated suggestion showing a price range based on similar items.
+
+Section 4 — Availability: Three toggle chips labeled "🛒 Buy", "🔄 Swap", and "📦 Rent". Multiple can be active at once. If "Rent" is toggled on, two additional fields slide into view: Rental Price per day and Security Deposit amount, side by side.
+
+At the very bottom of the page is a sticky submit bar that stays fixed at the bottom while scrolling. It shows on the left how many of the required 3 photos have been uploaded (e.g. "2 of 3 photos uploaded"), and on the right a button "List Item" that is disabled until all required fields are complete.
+
+PAGE 8 — Storefront
+A public profile page showing a seller's store.
+
+At the top is a hero card with the seller's information: their avatar image, their display name, a "✓ Verified" badge if they are verified, their city with a pin icon, their trust score shown as star icons and a numeric rating, their bio text, and a stats line showing total number of sales and number of active listings.
+
+Below the hero is a vouches strip showing overlapping circular avatars of users who have vouched for this seller, followed by the text "Vouched by X people". If there are no vouches, this strip is hidden.
+
+Below the vouches strip is a section heading "Active Listings (X)" where X is the count, followed by a grid of listing cards for all items this seller currently has active.
+
+If the seller has no active listings, a centered empty state is shown with a clothing emoji and the text "No active listings right now".
+
+PAGE 9 — Profile
+A private settings page for the logged-in user to manage their own profile.
+
+At the top is a profile header card showing: a circular avatar image (with a camera icon overlay on hover to upload a new avatar), the user's display name, their trust score shown as stars, and a "✓ Verified" badge if they are verified.
+
+Below the header is a sustainability impact card showing: a heading "Your Impact 🌿", two stats side by side — CO₂ saved in kilograms and water saved in liters — and below those stats a note showing how many transactions generated this impact.
+
+Below the impact card is a tab bar with two tabs: "Profile" and "Try-On Photos".
+
+Profile tab: A form with three fields: Full Name, City, and Bio (a text area). Below the form is a "Save Changes" button.
+
+Try-On Photos tab: An upload zone with a camera emoji, a heading, and a subtext. Clicking or dragging files into this zone uploads a new try-on photo. Below the upload zone is a grid of the user's existing try-on photos. Each photo has a hover overlay with a "Remove" button.
+
+PAGE 10 — Seller Dashboard
+A private analytics and listings management page for the logged-in user acting as a seller.
+
+At the top is a heading "Dashboard" on the left and a "+ New Listing" button on the right.
+
+Below is a tab bar with two tabs: "Overview" and "My Listings".
+
+Overview tab: A grid of eight stat cards, each showing an icon, a large numeric value, a label, and an optional change indicator (e.g. "+12%"). The eight stats are: Active Listings, Items Sold, Total Revenue (in ₹), Total Views, Total Saves, Conversion Rate (%), Average Days to Sell, and Open Disputes.
+
+Below the stat cards is a "Best Performing Listing" card showing: the item's thumbnail image, title, price, number of views and saves, and a conversion percentage badge.
+
+Below that is a category breakdown section showing a horizontal bar chart. Each bar represents a category with a label and a visual bar proportional to the number of listings in that category.
+
+My Listings tab: A grid of all the user's listings using the standard listing card component. Each card has an additional "Edit" button that appears on hover.
+
+PAGE 11 — Swap Engine
+A page for browsing and proposing item swaps with other users.
+
+At the top is a page heading and a tab bar with three tabs displayed as pill-style toggles: "Browse Swaps", "Propose", and "My Swaps".
+
+Browse Swaps tab: A grid of listing cards for items that are available for swap. Each card has an additional button in its footer: "Propose Swap →".
+
+Propose tab: A two-column layout. The left column (narrower) is labeled "They Offer" and shows either the listing card of the item you selected from the browse tab, or an empty placeholder with instructions. The right column (wider) is labeled "You Offer" and shows a scrollable list of the current user's own active listings, each as a compact row with a thumbnail, title, and price. The user clicks one to select it — the selected row is highlighted. Below both columns is a "Swap Summary" card that shows both item titles and prices, a gap payment row (showing how much either party would owe to balance the trade), a safety deposit row, a total row, and a "Propose Swap" button.
+
+My Swaps tab: A vertical list of swap cards. Each card shows: the current user's item (thumbnail + title + price) on the left, a swap arrow (↔️) in the middle, the other user's item (thumbnail + title + price) on the right, a status badge (Pending / Matched / Escrow Held / Completed / Cancelled), and action buttons appropriate to the current status — Accept / Decline for incoming pending requests, Cancel for outgoing requests, or "Pay & Proceed" for matched swaps.
+
+PAGE 12 — Chat Page
+A real-time messaging page between two users, usually initiated from a listing or swap.
+
+The page layout is fixed with three stacked zones: a fixed header at the top, a scrollable message area in the middle, and a fixed input bar at the bottom.
+
+Header: A back arrow on the left, then the other user's circular avatar, their name, and an online status indicator (a small green dot). On the right side of the header is a product pill showing a small thumbnail of the listing being discussed, the listing title, and the price.
+
+Message area: Messages are displayed in chronological order. Received messages appear on the left side with the sender's avatar and a message bubble. Sent messages appear on the right side without an avatar, in a differently styled bubble. Between messages from different days, a centered date separator pill appears showing "Today", "Yesterday", or the date. Below each message bubble is a timestamp. For sent messages, a read receipt indicator is shown (single checkmark for sent, double checkmark for read). When the other user is typing, an animated typing indicator appears in the received message position.
+
+Input bar: A text input field that can grow taller as the user types multiple lines, and a send button on the right.
+
+PAGE 13 — Rental Page
+A booking page for renting a specific listing item.
+
+At the top is a back navigation link.
+
+The page body has two side-by-side cards:
+
+Left card — Item preview: A square image of the item, the item title, the rental price per day and security deposit amount, the condition badge, and a seller row showing the seller's avatar, name, and trust score stars.
+
+Right card — Booking panel: A heading "Select rental dates". Below it, two date input fields side by side labeled "From" and "To". When dates are selected, a cost breakdown appears below the date inputs showing three rows: the rental calculation (number of days × price per day), the security deposit amount, and a divider followed by the total. Below the cost breakdown is a small note about payment being held in escrow and the deposit being returned after the item is returned safely. At the bottom is a button "Book & Pay →".
+
+PAGE 14 — Order Tracking
+A status and action page for a specific transaction between buyer and seller.
+
+At the top is an item summary card showing: the item thumbnail, the item title, a transaction ID number, the total transaction amount, and a status badge (Pending / Escrow Held / In Transit / Completed / Disputed).
+
+Below the item summary is a horizontal progress stepper with four steps: "Payment", "Escrow", "In Transit", and "Complete". Each step has a circular icon and a label below it. Completed steps are filled, the active step is highlighted, and upcoming steps are grayed out. Lines connect the steps.
+
+Below the stepper is an escrow status card showing the current escrow state and the amount held.
+
+Below the escrow card is a contextual action section — only the section relevant to the current state and user role is shown:
+
+Buyer payment step: Shows the amount due and a "Pay with Razorpay →" button.
+Seller fulfilment step: Shows two selectable option cards — "📍 Meet in person" and "🚚 Ship it".
+Meetup flow (if meet in person selected): Shows the meetup address and scheduled time, a "Copy location" link. For the seller, there is also a QR code block with the instruction "Show this to buyer". A countdown timer appears in an orange banner showing how much time remains in the meetup grace period.
+Delivery confirmation (for buyer): A button "Received? Confirm delivery".
+Return window: An outlined notice card with the message "Issue with your order? File a dispute →" linking to the dispute page. This is shown while the return window is still open.
+PAGE 15 — Dispute Filing
+A form page (or modal) for reporting a problem with a completed transaction.
+
+At the top is a heading "File a Dispute" and a subheading "Describe the issue and upload evidence."
+
+Below the heading is a group of three selectable option cards for dispute type:
+
+"Condition Mismatch" — item received in worse condition than listed
+"Rental Damage" — returned item had damage not present before rental
+"Swap Misrepresentation" — item didn't match its listing description
+Only one dispute type can be selected at a time.
+
+Below the type selector is a description textarea labeled "Describe the problem" with placeholder text prompting the user to be specific.
+
+Below the textarea is an evidence upload area labeled "Upload photos (max 5)". When photos are uploaded, they appear as a horizontal row of small square previews, each with a remove × button.
+
+Below the upload area is a warning notice that reads "False disputes may affect your trust score."
+
+At the bottom are two buttons: a "Cancel" text button on the left and a "Submit Dispute" button on the right.
+
+PAGE 16 — Admin Panel
+A private moderation dashboard visible only to users with the admin role.
+
+At the top is an admin top bar with the label "⚙️ Admin Panel" on the left and the logged-in admin's name and avatar on the right.
+
+Below the top bar is a five-tab navigation: "Overview", "Disputes", "Users", "Listings", and "No-Shows".
+
+Overview tab: A grid of eight stat cards showing platform-wide numbers. The stats are: Total Users, Active Listings, Total Transactions, Total Revenue (₹), Open Disputes, Flagged No-Shows, Total CO₂ Saved (kg), and Total Water Saved (L). Below the stat cards is a table of recent transactions showing transaction ID, buyer name, seller name, item, amount, and status.
+
+Disputes tab: A vertical list of dispute cards. Each card shows: a dispute type badge, a status badge, the date filed, the dispute description, a two-column layout with the filer's user details on the left and the other party's user details on the right (each showing avatar, name, and trust score), two rows of evidence photo grids (one row for the filer's evidence, one for the defendant's), a resolution dropdown with options (Buyer Wins / Seller Wins / Partial Refund / No Action), an optional refund amount input field (shown only when Partial Refund is selected), and a "Resolve Dispute" button.
+
+Users tab: A search bar at the top. Below it, a table listing all users. Each row contains: the user's avatar and name, their city, their trust score (shown as an editable number input that updates on blur), a verified status toggle button, their role badge (buyer / seller / admin), and a "View Store →" link.
+
+Listings tab: A table listing all listings. Each row shows: the item thumbnail, the item title, the seller's name, the listed price, the listing status badge, and a "Delist" action button.
+
+No-Shows tab: A list of flagged no-show incidents. Each entry shows: the transaction ID, a small item thumbnail and title, the names of the flagged parties, badges indicating whether the buyer or seller (or both) were flagged for no-show, and the date of the incident.

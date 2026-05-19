@@ -3,7 +3,15 @@
   "permissions": {
     "allow": [
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git ls-remote *)",
+      "Bash(cd /tmp/stitch-skills 2>/dev/null; grep -ri \"mcp\" README.md skills/stitch-design/README.md skills/stitch-design/references/tool-schemas.md 2>/dev/null | grep -i \"stitch\" | head -20)",
+      "Read(//tmp/**)",
+      "Bash(CI=true npx --no-install react-scripts build)",
+      "Bash(curl -s http://localhost:5000/health)",
+      "Bash(curl -s -o /dev/null -w \"client:%{http_code}\\\\n\" http://localhost:3000)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__get_advisors"
     ]
   }
 }

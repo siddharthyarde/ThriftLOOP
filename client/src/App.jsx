@@ -2,7 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { supabaseConfigured } from './lib/supabaseClient';
 import Navbar from './components/Navbar';
+import './styles/theme.css';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -39,8 +41,13 @@ const PublicOnlyRoute = ({ children }) => {
 };
 
 const AppRoutes = () => (
-  <>
+  <div className="thrift-root">
     <Navbar />
+    {!supabaseConfigured && (
+      <div style={{ background: '#FFFBEB', borderBottom: '1px solid #FDE68A', color: '#92400E', fontSize: 13, padding: '8px 16px', textAlign: 'center' }}>
+        ⚠️ Supabase not configured — create <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 4 }}>client/.env</code> with <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 4 }}>REACT_APP_SUPABASE_URL</code> + <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 4 }}>REACT_APP_SUPABASE_ANON_KEY</code>, then restart.
+      </div>
+    )}
     <Toaster position="top-right" toastOptions={{ style: { borderRadius: '12px', fontSize: '14px' } }} />
     <Routes>
       <Route path="/"               element={<Home />} />
@@ -63,7 +70,7 @@ const AppRoutes = () => (
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  </>
+  </div>
 );
 
 const App = () => (

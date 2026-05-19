@@ -1,46 +1,92 @@
-import { Link } from 'react-router-dom';
-import ConditionBadge from './ConditionBadge';
+import { useNavigate } from 'react-router-dom';
+import { Photo } from './Shared';
+import * as I from './Icons';
 
-const ListingCard = ({ listing, compact = false }) => {
-  if (!listing) return null;
+const PH_VARIANTS = ["ph-soft","ph-warm","ph-dots","ph-stripes","ph-grid"];
+
+function getPh(item) {
+  if (!item) return "ph-soft";
+  const phMap = { ph:"ph", "ph-soft":"ph-soft", "ph-warm":"ph-warm", "ph-dots":"ph-dots", "ph-stripes":"ph-stripes", "ph-grid":"ph-grid" };
+  return phMap[item.ph] || PH_VARIANTS[(item.id?.charCodeAt(0) || 0) % PH_VARIANTS.length];
+}
+
+export function formatPrice(n) {
+  return '₹' + Number(n || 0).toLocaleString('en-IN');
+}
+
+export function ConditionBadge({ grade, label }) {
+  const g = grade || 'A';
+  const l = label || { A:"Like New", B:"Good", C:"Fair", D:"Worn" }[g] || g;
+  return (
+    <span className="pill" style={{ padding:"2px 8px", fontSize:10, background:"var(--bg)", color:"var(--ink-mute)", letterSpacing:".05em" }}>
+      <span style={{ color:"var(--accent)", marginRight: 2, fontWeight:700 }}>{g}</span>{l}
+    </span>
+  );
+}
+
+export default function ListingCard({ item, layout = "editorial", onOpen, saved, onSave }) {
+  const navigate = useNavigate();
+  const compact = layout === "compact";
+  const ph = getPh(item);
+
+  const handleClick = () => {
+    if (onOpen) { onOpen(item); return; }
+    navigate(`/listing/${item.id}`);
+  };
 
   return (
-    <Link
-      to={`/listing/${listing.id}`}
-      className="group block bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
+    <article className="lift" style={{ cursor:"pointer", display:"flex", flexDirection:"column", gap: compact ? 8 : 12 }}
+      onClick={handleClick}
     >
-      <div className="relative overflow-hidden bg-gray-50 aspect-square">
-        <img
-          src={listing.images?.[0]}
-          alt={listing.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-        />
-        {/* Available-for badges */}
-        <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-          {listing.available_for?.includes('swap')   && <span className="text-[9px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full">SWAP</span>}
-          {listing.available_for?.includes('rental') && <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.5 rounded-full">RENT</span>}
+      <div style={{ position:"relative" }}>
+        <Photo
+          variant={ph}
+          aspect={compact ? "1 / 1.15" : "4 / 5"}
+          style={{ borderRadius: compact ? 10 : 14 }}
+        >
+          <div style={{ position:"absolute", top:10, left:10, display:"flex", gap:6, zIndex:1 }}>
+            {item.swap_ok && <span className="pill" style={{ background:"var(--bg)", fontSize:10, padding:"3px 8px" }}>SWAP</span>}
+            {item.rent_ok && <span className="pill" style={{ background:"var(--primary)", color:"var(--primary-ink)", fontSize:10, padding:"3px 8px", border:0 }}>RENT</span>}
+          </div>
+          <button className="icon-btn"
+            onClick={(e) => { e.stopPropagation(); onSave?.(item); }}
+            style={{
+              position:"absolute", top:8, right:8, zIndex:1,
+              width: 32, height: 32, background:"color-mix(in srgb, var(--bg) 80%, transparent)",
+              color: saved ? "var(--accent)" : "var(--ink)",
+              backdropFilter:"blur(8px)",
+            }}>
+            <I.Heart size={16} filled={saved} />
+          </button>
+          <span className="ph-label" style={{ alignSelf:"flex-end" }}>{item.title}</span>
+        </Photo>
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap: 4, padding: compact ? "0 2px" : 0 }}>
+        <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap: 8 }}>
+          <h3 style={{
+            margin:0, fontSize: compact ? 13 : 14.5, fontWeight: 500,
+            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+          }}>{item.title}</h3>
+          {!compact && (
+            <span style={{ fontSize:11, color:"var(--ink-mute)", whiteSpace:"nowrap" }}>{item.brand}</span>
+          )}
         </div>
-        {listing.status !== 'active' && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-white font-bold uppercase text-sm tracking-wider">{listing.status}</span>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+          <span style={{ fontFamily:"var(--serif)", fontSize: compact ? 16 : 19, color:"var(--ink)" }}>
+            {formatPrice(item.price)}
+          </span>
+          <ConditionBadge grade={item.condition_grade || item.grade} label={item.condition_label || item.gradeLabel}/>
+        </div>
+        {!compact && (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginTop:2 }}>
+            <span className="small muted" style={{ display:"inline-flex", alignItems:"center", gap:6 }}>
+              <I.Pin size={12}/> {item.city}
+            </span>
+            <span className="small muted">Size {item.size}</span>
           </div>
         )}
       </div>
-      <div className="p-3">
-        <p className="text-sm font-semibold text-gray-900 truncate">{listing.title}</p>
-        <div className="flex items-center justify-between mt-1 gap-1">
-          <p className="text-base font-bold text-gray-900">₹{listing.price?.toLocaleString()}</p>
-          <ConditionBadge condition={listing.condition} size="xs" />
-        </div>
-        {!compact && (
-          <p className="text-xs text-gray-400 mt-1 truncate">
-            {listing.size} · {listing.users?.locality || listing.locality}
-          </p>
-        )}
-      </div>
-    </Link>
+    </article>
   );
-};
-
-export default ListingCard;
+}

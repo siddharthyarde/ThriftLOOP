@@ -32,7 +32,7 @@ Razorpay expects `RAZORPAY_MERCHANT_TOKEN` to be base64 of `key_id:key_secret`.
 
 ## Included Servers
 
-Core product/platform MCPs: Supabase, Vercel, Render, Razorpay, Shiprocket API, Stytch, Figma, GitHub, Postman, and Netlify.
+Core product/platform MCPs: Supabase, Vercel, Render, Razorpay, Shiprocket API, Stytch, Stitch, Figma, GitHub, Postman, and Netlify.
 
 Useful Node.js/React.js development MCPs: Context7 for fresh library docs, Playwright for browser automation, filesystem for project-scoped file operations, sequential-thinking, memory, Sentry, and Stripe.
 
@@ -49,6 +49,8 @@ Use `/plugin` inside Claude Code to authenticate it.
 The Shiprocket entry uses this repo's local MCP bridge at `mcp/shiprocket-server.mjs`, so it needs dependencies installed with `npm install`.
 
 GitHub uses a PAT header. If `GITHUB_TOKEN` is empty, `claude mcp list` will show GitHub as failed until you set it and restart Claude.
+
+Google Stitch uses the `stitch-mcp` package. Set `GOOGLE_CLOUD_PROJECT`, install/authenticate the Google Cloud CLI, enable the Stitch API for that project, then restart Claude.
 
 ## Project Skills
 

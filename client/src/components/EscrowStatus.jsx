@@ -1,21 +1,31 @@
+import { formatPrice } from './ListingCard';
+
 const ESCROW_STATES = {
-  pending:         { label: 'Awaiting Payment', color: 'bg-gray-100 text-gray-600',     icon: '⏳' },
-  held:            { label: 'Escrow Held',      color: 'bg-yellow-100 text-yellow-700', icon: '🔒' },
-  released:        { label: 'Escrow Released',  color: 'bg-green-100 text-green-700',   icon: '✅' },
-  refunded:        { label: 'Refunded',         color: 'bg-blue-100 text-blue-700',     icon: '↩️' },
-  partial_release: { label: 'Partial Release',  color: 'bg-orange-100 text-orange-700', icon: '⚖️' },
+  pending:         { label: 'Awaiting Payment', bg: '#F3F4F6', color: '#374151', borderColor: '#D1D5DB', icon: '⏳' },
+  held:            { label: 'Escrow Held',      bg: '#FEF3C7', color: '#92400E', borderColor: '#F59E0B', icon: '🔒' },
+  released:        { label: 'Escrow Released',  bg: '#DCFCE7', color: '#15803D', borderColor: '#16A34A', icon: '✅' },
+  refunded:        { label: 'Refunded',         bg: '#DBEAFE', color: '#1D4ED8', borderColor: '#2563EB', icon: '↩️' },
+  partial_release: { label: 'Partial Release',  bg: '#FED7AA', color: '#9A3412', borderColor: '#EA580C', icon: '⚖️' },
 };
 
 const EscrowStatus = ({ status, amount }) => {
-  const config = ESCROW_STATES[status] || ESCROW_STATES.pending;
+  const cfg = ESCROW_STATES[status] || ESCROW_STATES.pending;
   return (
-    <div className={`rounded-2xl p-4 flex items-center gap-3 ${config.color}`}>
-      <span className="text-2xl">{config.icon}</span>
+    <div style={{
+      background: cfg.bg,
+      borderLeft: `4px solid ${cfg.borderColor}`,
+      borderRadius: 10,
+      padding: '14px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+    }}>
+      <span style={{ fontSize: 24 }}>{cfg.icon}</span>
       <div>
-        <p className="font-semibold">{config.label}</p>
+        <p style={{ fontSize: 14, fontWeight: 600, color: cfg.color, margin: 0 }}>{cfg.label}</p>
         {amount && (
-          <p className="text-sm opacity-80">
-            ₹{amount.toLocaleString()} {status === 'held' ? 'held safely' : ''}
+          <p style={{ fontSize: 13, color: cfg.color, opacity: 0.8, margin: '2px 0 0' }}>
+            {formatPrice(amount)}{status === 'held' ? ' held safely in escrow' : ''}
           </p>
         )}
       </div>

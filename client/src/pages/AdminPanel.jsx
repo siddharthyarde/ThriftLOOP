@@ -1,56 +1,136 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../lib/api';
+import { formatPrice } from '../components/ListingCard';
+import { Photo, Stars } from '../components/Shared';
+import * as I from '../components/Icons';
 
-const TABS = ['overview', 'disputes', 'users', 'listings', 'no-shows'];
-
-const StatBox = ({ label, value, icon, color = 'text-gray-900' }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-    <div className="flex justify-between items-start">
-      <div>
-        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-        <p className={`text-2xl font-bold ${color}`}>{value}</p>
+function StatCard({ k, v, d, icon, bad }) {
+  return (
+    <div className="card" style={{ padding: 18, borderRadius: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--bg)', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+        {d && <span className="mono" style={{ fontSize: 11, color: bad ? '#C84A3A' : 'var(--accent)' }}>{d}</span>}
       </div>
-      <span className="text-2xl">{icon}</span>
+      <div className="serif" style={{ fontSize: 30, letterSpacing: '-.01em', lineHeight: 1 }}>{v}</div>
+      <div className="small muted" style={{ fontSize: 11.5, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 6 }}>{k}</div>
     </div>
-  </div>
-);
+  );
+}
 
-const AdminPanel = () => {
-  const [tab, setTab] = useState('overview');
+function DisputeCard({ d, onResolve }) {
+  const [res, setRes] = useState('no-action');
+  const [refund, setRefund] = useState('');
+  return (
+    <div className="card" style={{ padding: 22, borderRadius: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--ink-mute)' }}>{d.id?.slice(0, 8)}</span>
+            <span className="pill" style={{ fontSize: 10, background: 'var(--surface-2)' }}>{d.dispute_type?.replace(/_/g, ' ')}</span>
+          </div>
+          <div className="serif" style={{ fontSize: 18, marginTop: 8, letterSpacing: '-.005em' }}>{d.description}</div>
+          <div className="small muted" style={{ marginTop: 6 }}>
+            {d.status?.replace(/_/g, ' ')} · {new Date(d.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="icon-btn"><I.Chat size={16}/></button>
+          <button className="icon-btn"><I.ArrowUR size={16}/></button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: 'Filer', user: d.filer_user },
+          { label: 'Defendant', user: d.defendant_user },
+        ].map((side, i) => (
+          <div key={i} className="card" style={{ padding: 14, borderRadius: 12, background: 'var(--bg)' }}>
+            <div className="small muted" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>{side.label}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              {side.user?.avatar_url
+                ? <img src={side.user.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}/>
+                : <Photo variant="ph-soft" style={{ width: 36, height: 36, borderRadius: '50%' }}/>
+              }
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{side.user?.name || '—'}</div>
+                <Stars value={(side.user?.trust_score || 0) / 20} size={10}/>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(d.evidence_urls || []).slice(i * 2, i * 2 + 2).map((url, j) => (
+                <img key={j} src={url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }}/>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, background: 'var(--surface)', borderRadius: 12 }}>
+        <span className="small muted" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>Resolution</span>
+        <select value={res} onChange={e => setRes(e.target.value)}
+          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', fontFamily: 'inherit', fontSize: 13 }}>
+          <option value="no-action">No action</option>
+          <option value="buyer_wins">Buyer wins (full refund)</option>
+          <option value="partial_refund">Partial refund</option>
+          <option value="seller_wins">Seller wins</option>
+        </select>
+        {res === 'partial_refund' && (
+          <input className="input fade-in" placeholder="Refund ₹" value={refund} onChange={e => setRefund(e.target.value)} style={{ width: 120, padding: '8px 12px', fontSize: 13 }}/>
+        )}
+        <button className="btn btn-primary" onClick={() => onResolve(d.id, res, res === 'partial_refund' ? Number(refund) : null)}>
+          Resolve <I.Arrow size={14}/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const TABS = ['Overview', 'Disputes', 'Users', 'Listings', 'No-shows'];
+const TAB_API = {
+  'Overview': 'overview',
+  'Disputes': 'disputes',
+  'Users': 'users',
+  'Listings': 'listings',
+  'No-shows': 'no-shows',
+};
+
+export default function AdminPanel() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState('Overview');
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
   const [users, setUsers] = useState([]);
   const [listings, setListings] = useState([]);
   const [noShows, setNoShows] = useState([]);
+  const [txns, setTxns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uq, setUq] = useState('');
 
   const fetchTab = useCallback(async () => {
     setLoading(true);
     try {
-      if (tab === 'overview') {
-        const { data } = await api.get('/api/admin/stats');
-        setStats(data);
-      } else if (tab === 'disputes') {
+      const key = TAB_API[tab];
+      if (key === 'overview') {
+        const statsRes = await api.get('/api/admin/stats');
+        setStats(statsRes.data);
+        setTxns(statsRes.data?.recent_transactions || []);
+      } else if (key === 'disputes') {
         const { data } = await api.get('/api/dispute/admin/all');
         setDisputes(data || []);
-      } else if (tab === 'users') {
+      } else if (key === 'users') {
         const { data } = await api.get('/api/admin/users?limit=50');
         setUsers(data.users || []);
-      } else if (tab === 'listings') {
+      } else if (key === 'listings') {
         const { data } = await api.get('/api/admin/listings?limit=50');
         setListings(data.listings || []);
-      } else if (tab === 'no-shows') {
+      } else if (key === 'no-shows') {
         const { data } = await api.get('/api/admin/noshow-flags');
         setNoShows(data || []);
       }
-    } catch {
-      toast.error('Failed to load data');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Failed to load data'); }
+    finally { setLoading(false); }
   }, [tab]);
 
   useEffect(() => { fetchTab(); }, [fetchTab]);
@@ -64,16 +144,13 @@ const AdminPanel = () => {
       });
       toast.success('Dispute resolved!');
       fetchTab();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to resolve');
-    }
+    } catch (err) { toast.error(err.response?.data?.error || 'Failed to resolve'); }
   };
 
   const overrideTrust = async (userId, score) => {
     try {
-      await api.put(`/api/admin/users/${userId}/trust-score`, { trust_score: score });
+      await api.put(`/api/admin/users/${userId}/trust-score`, { trust_score: Number(score) });
       toast.success('Trust score updated');
-      fetchTab();
     } catch { toast.error('Failed to update'); }
   };
 
@@ -94,348 +171,283 @@ const AdminPanel = () => {
     } catch { toast.error('Failed'); }
   };
 
+  const statCards = stats ? [
+    { k: 'Total users',        v: (stats.users || 0).toLocaleString('en-IN'),           d: '',  icon: <I.User size={16}/> },
+    { k: 'Active listings',    v: (stats.listings || 0).toLocaleString('en-IN'),         d: '',  icon: <I.Tag size={16}/> },
+    { k: 'Total transactions', v: (stats.transactions || 0).toLocaleString('en-IN'),     d: '',  icon: <I.Cart size={16}/> },
+    { k: 'Total revenue',      v: stats.total_revenue ? formatPrice(stats.total_revenue) : '—', d: '', icon: <span className="serif" style={{ fontSize: 16 }}>₹</span> },
+    { k: 'Open disputes',      v: stats.open_disputes || '0', d: '', icon: <I.Shield size={16}/>, bad: (stats.open_disputes || 0) > 0 },
+    { k: 'Active rentals',     v: stats.active_rentals || '0', d: '', icon: <I.Reload size={16}/> },
+    { k: 'CO₂ saved',          v: stats.sustainability?.co2_saved_kg ? `${stats.sustainability.co2_saved_kg.toFixed(1)} kg` : '—', d: '', icon: <I.Leaf size={16}/> },
+    { k: 'Water saved',        v: stats.sustainability?.water_saved_l ? `${(stats.sustainability.water_saved_l / 1000).toFixed(0)} L` : '—', d: '', icon: <I.Globe size={16}/> },
+  ] : [];
+
+  const STATUS_DOT = {
+    completed: 'var(--accent)', disputed: '#C84A3A', in_transit: 'var(--accent-2)',
+    escrow_held: 'var(--ink-mute)', pending: 'var(--ink-mute)',
+  };
+
+  const filteredUsers = uq
+    ? users.filter(u => u.name?.toLowerCase().includes(uq.toLowerCase()) || u.email?.toLowerCase().includes(uq.toLowerCase()))
+    : users;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">ADMIN</span>
-      </div>
+    <>
+      {/* Admin top bar */}
+      <header style={{ padding: '14px 32px', background: 'var(--primary)', color: 'var(--primary-ink)', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 26, height: 26, borderRadius: 6, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <I.Sliders size={14}/>
+          </span>
+          <span className="serif" style={{ fontSize: 18, letterSpacing: '-.005em' }}>Admin panel</span>
+          <span className="pill" style={{ background: 'color-mix(in srgb, var(--primary-ink) 14%, transparent)', color: 'var(--primary-ink)', border: 0, fontSize: 10 }}>RESTRICTED</span>
+        </div>
+        <div style={{ flex: 1, maxWidth: 360, marginLeft: 12 }}>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', opacity: .6 }}><I.Search size={14}/></span>
+            <input className="input" placeholder="Search users, listings, transactions…"
+              style={{ background: 'color-mix(in srgb, var(--primary-ink) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--primary-ink) 20%, transparent)', color: 'var(--primary-ink)', paddingLeft: 36, fontSize: 13 }}/>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+          <button className="icon-btn" style={{ color: 'var(--primary-ink)' }}><I.Bell size={16}/></button>
+          <Photo variant="ph-soft" style={{ width: 32, height: 32, borderRadius: '50%' }}/>
+          <div style={{ fontSize: 12.5 }}>
+            <div style={{ fontWeight: 500 }}>Admin</div>
+            <div style={{ opacity: .65, fontSize: 11 }}>Moderation</div>
+          </div>
+        </div>
+      </header>
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-6 overflow-x-auto">
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg capitalize whitespace-nowrap transition ${
-              tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}>
-            {t === 'no-shows' ? '🚩 No-Shows' :
-             t === 'disputes' ? '⚖️ Disputes' :
-             t === 'overview' ? '📊 Overview' :
-             t === 'users'    ? '👥 Users' : '📦 Listings'}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20 text-gray-400">Loading…</div>
-      ) : (
-        <>
-          {tab === 'overview' && stats && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatBox label="Total Users"    value={stats.users} icon="👤" />
-                <StatBox label="Total Listings" value={stats.listings} icon="📦" />
-                <StatBox label="Transactions"   value={stats.transactions} icon="💳" />
-                <StatBox label="Total Revenue"  value={`₹${stats.total_revenue?.toLocaleString()}`} icon="💰" color="text-green-600" />
-                <StatBox label="Open Disputes"  value={stats.open_disputes} icon="⚠️" color={stats.open_disputes > 0 ? 'text-red-500' : 'text-gray-900'} />
-                <StatBox label="Active Rentals" value={stats.active_rentals} icon="📅" />
-                <StatBox label="CO₂ Saved"      value={`${stats.sustainability?.co2_saved_kg} kg`} icon="🌱" color="text-green-600" />
-                <StatBox label="Water Saved"    value={`${(stats.sustainability?.water_saved_l / 1000).toFixed(1)}k L`} icon="💧" color="text-blue-600" />
-              </div>
-
-              <div>
-                <h2 className="text-base font-semibold text-gray-800 mb-3">Recent Transactions</h2>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                      <tr>
-                        {['ID', 'Type', 'Amount', 'Status', 'Date'].map(h => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {(stats.recent_transactions || []).map(t => (
-                        <tr key={t.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-mono text-xs text-gray-400">{t.id.slice(0, 8)}…</td>
-                          <td className="px-4 py-3 capitalize">{t.type}</td>
-                          <td className="px-4 py-3 font-semibold text-green-600">₹{t.amount?.toLocaleString()}</td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${
-                              t.status === 'completed' ? 'bg-green-100 text-green-700' :
-                              t.status === 'disputed'  ? 'bg-red-100 text-red-600' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>{t.status}</span>
-                          </td>
-                          <td className="px-4 py-3 text-gray-400 text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === 'disputes' && (
-            <div className="space-y-4">
-              {disputes.length === 0 && (
-                <div className="text-center py-16 text-gray-400">
-                  <p className="text-3xl mb-2">⚖️</p>
-                  <p>No disputes to review</p>
-                </div>
+      {/* Tabs */}
+      <section style={{ padding: '0 32px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <div style={{ display: 'flex', gap: 0 }}>
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              style={{
+                padding: '16px 20px', background: 'transparent', border: 0, cursor: 'pointer', fontSize: 14,
+                color: tab === t ? 'var(--ink)' : 'var(--ink-mute)',
+                fontWeight: tab === t ? 600 : 400,
+                borderBottom: tab === t ? '2px solid var(--ink)' : '2px solid transparent',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+              {t}
+              {t === 'Disputes' && disputes.length > 0 && (
+                <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 10, background: 'var(--accent)', color: '#fff' }}>{disputes.filter(d => d.status === 'open').length || disputes.length}</span>
               )}
-              {disputes.map(d => (
-                <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
-                          d.status === 'open'         ? 'bg-yellow-100 text-yellow-700' :
-                          d.status === 'under_review' ? 'bg-blue-100 text-blue-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>{d.status?.replace('_', ' ')}</span>
-                        <span className="text-xs text-gray-400 capitalize">{d.type?.replace(/_/g, ' ')}</span>
-                      </div>
-                      <p className="text-sm text-gray-600">{d.description}</p>
-                      <p className="text-xs text-gray-400 mt-1">Filed: {new Date(d.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <p className="text-xs font-mono text-gray-300">{d.id.slice(0, 8)}</p>
-                  </div>
-
-                  <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Original Listing Photo</p>
-                      {d.listing_photo ? (
-                        <div>
-                          <img src={d.listing_photo} alt="Listing" className="w-full aspect-square object-cover rounded-xl border border-gray-100" />
-                          {d.listing_photo_timestamp && (
-                            <p className="text-[10px] text-gray-400 mt-1">📅 {new Date(d.listing_photo_timestamp).toLocaleDateString()}</p>
-                          )}
-                        </div>
-                      ) : <div className="w-full aspect-square bg-gray-100 rounded-xl flex items-center justify-center text-gray-300">No photo</div>}
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                        Filer Evidence ({d.filer?.name})
-                      </p>
-                      <div className="grid grid-cols-2 gap-1">
-                        {(d.evidence_filer || []).slice(0, 4).map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noreferrer">
-                            <img src={url} alt={`Evidence ${i + 1}`} className="aspect-square object-cover rounded-lg border border-gray-100 hover:opacity-80 transition" />
-                          </a>
-                        ))}
-                        {(d.evidence_filer || []).length === 0 && (
-                          <div className="col-span-2 aspect-square bg-gray-50 rounded-xl flex items-center justify-center text-gray-300 text-sm">No evidence</div>
-                        )}
-                      </div>
-                      {d.complaint_photo_timestamp && (
-                        <p className="text-[10px] text-gray-400 mt-1">📅 {new Date(d.complaint_photo_timestamp).toLocaleDateString()}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                        Defense Evidence ({d.defendant?.name})
-                      </p>
-                      <div className="grid grid-cols-2 gap-1">
-                        {(d.evidence_defense || []).slice(0, 4).map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noreferrer">
-                            <img src={url} alt={`Defense ${i + 1}`} className="aspect-square object-cover rounded-lg border border-gray-100 hover:opacity-80 transition" />
-                          </a>
-                        ))}
-                        {(d.evidence_defense || []).length === 0 && (
-                          <div className="col-span-2 aspect-square bg-gray-50 rounded-xl flex items-center justify-center text-gray-300 text-sm">Awaiting evidence</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="px-5 pb-4 grid grid-cols-2 gap-3">
-                    {[{ label: 'Filer', user: d.filer }, { label: 'Defendant', user: d.defendant }].map(({ label, user }) => (
-                      <div key={label} className="flex items-center gap-2 bg-gray-50 rounded-xl p-3">
-                        <img src={user?.avatar_url || `https://ui-avatars.com/api/?name=${user?.name}&size=32&background=e5e7eb`}
-                          alt={user?.name} className="w-8 h-8 rounded-full" />
-                        <div>
-                          <p className="text-xs font-medium text-gray-700">{label}: {user?.name}</p>
-                          <p className="text-xs text-gray-400">Trust: {user?.trust_score?.toFixed(1)} ★</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {d.status !== 'resolved' && (
-                    <div className="px-5 pb-5 flex gap-2 flex-wrap border-t border-gray-100 pt-4">
-                      <button onClick={() => resolveDispute(d.id, 'buyer_wins')}
-                        className="text-xs bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600 font-medium">
-                        ✅ Buyer Wins (Refund)
-                      </button>
-                      <button onClick={() => resolveDispute(d.id, 'seller_wins')}
-                        className="text-xs bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 font-medium">
-                        ✅ Seller Wins (Release)
-                      </button>
-                      <button onClick={() => {
-                        const amt = prompt('Enter partial refund amount (₹):');
-                        if (amt) resolveDispute(d.id, 'partial_refund', parseFloat(amt));
-                      }}
-                        className="text-xs bg-orange-400 text-white px-4 py-2 rounded-xl hover:bg-orange-500 font-medium">
-                        ⚖️ Partial Refund
-                      </button>
-                      <button onClick={() => resolveDispute(d.id, 'no_action')}
-                        className="text-xs border border-gray-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-50 font-medium">
-                        No Action
-                      </button>
-                    </div>
-                  )}
-                  {d.status === 'resolved' && (
-                    <div className="px-5 pb-5">
-                      <p className="text-sm text-green-600 font-medium">
-                        ✅ Resolved: {d.admin_decision?.replace(/_/g, ' ')}
-                      </p>
-                      {d.admin_notes && <p className="text-xs text-gray-400 mt-0.5">{d.admin_notes}</p>}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === 'users' && (
-            <div>
-              <div className="flex gap-2 mb-4">
-                <input type="text" placeholder="Search users…" value={uq}
-                  onChange={e => setUq(e.target.value)}
-                  onKeyDown={async e => {
-                    if (e.key === 'Enter') {
-                      const { data } = await api.get(`/api/admin/users?q=${uq}&limit=50`);
-                      setUsers(data.users || []);
-                    }
-                  }}
-                  className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 flex-1"
-                />
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      {['User', 'City', 'Trust', 'Verified', 'Role', 'Actions'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {users.map(u => (
-                      <tr key={u.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <img src={u.avatar_url || `https://ui-avatars.com/api/?name=${u.name}&size=28&background=e5e7eb`}
-                              alt={u.name} className="w-7 h-7 rounded-full" />
-                            <div>
-                              <p className="font-medium text-gray-900 text-xs">{u.name}</p>
-                              <p className="text-[10px] text-gray-400">{u.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{u.locality || '—'}</td>
-                        <td className="px-4 py-3">
-                          <input type="number" defaultValue={u.trust_score} step="0.1" min="0" max="5"
-                            onBlur={e => overrideTrust(u.id, parseFloat(e.target.value))}
-                            className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <button onClick={() => toggleVerified(u.id, u.verified)}
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              u.verified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                            }`}>
-                            {u.verified ? '✓ Verified' : 'Unverified'}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
-                            u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500'
-                          }`}>{u.role}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link to={`/storefront/${u.id}`}
-                            className="text-xs text-green-600 hover:underline">View</Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {tab === 'listings' && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr>
-                    {['Item', 'Seller', 'Price', 'Status', 'Action'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {listings.map(l => (
-                    <tr key={l.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <img src={l.images?.[0]} alt={l.title} className="w-10 h-10 rounded-lg object-cover" />
-                          <p className="text-xs font-medium text-gray-800 max-w-[150px] truncate">{l.title}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{l.users?.name}</td>
-                      <td className="px-4 py-3 text-xs font-semibold text-green-600">₹{l.price?.toLocaleString()}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${
-                          l.status === 'active'   ? 'bg-green-100 text-green-700' :
-                          l.status === 'sold'     ? 'bg-gray-100 text-gray-500' :
-                          l.status === 'delisted' ? 'bg-red-100 text-red-500' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>{l.status}</span>
-                      </td>
-                      <td className="px-4 py-3 flex gap-2">
-                        <Link to={`/listing/${l.id}`} className="text-xs text-blue-500 hover:underline">View</Link>
-                        {l.status !== 'delisted' && (
-                          <button onClick={() => forceDelist(l.id)}
-                            className="text-xs text-red-400 hover:underline">Delist</button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {tab === 'no-shows' && (
-            <div className="space-y-3">
-              {noShows.length === 0 && (
-                <div className="text-center py-16 text-gray-400">
-                  <p className="text-3xl mb-2">✅</p><p>No flagged no-shows</p>
-                </div>
+              {t === 'No-shows' && noShows.length > 0 && (
+                <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 10, background: 'var(--surface-2)', color: 'var(--ink)' }}>{noShows.length}</span>
               )}
-              {noShows.map(m => (
-                <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">
-                        {m.status === 'buyer_noshow' ? '🚩 Buyer No-Show' :
-                         m.status === 'seller_noshow' ? '🚩 Seller No-Show' : '⚠️ Disputed'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Scheduled: {new Date(m.scheduled_time).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Transaction: {m.transaction_id?.slice(0, 8)}… · ₹{m.transactions?.amount?.toLocaleString()}
-                      </p>
-                    </div>
-                    {m.transactions?.listings?.images?.[0] && (
-                      <img src={m.transactions.listings.images[0]} alt=""
-                        className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {loading && (
+        <section style={{ padding: '24px 32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} style={{ height: 110, borderRadius: 14, background: 'var(--surface)', animation: 'pulse 1.5s infinite' }}/>
+            ))}
+          </div>
+        </section>
       )}
-    </div>
-  );
-};
 
-export default AdminPanel;
+      {/* Overview */}
+      {!loading && tab === 'Overview' && (
+        <section style={{ padding: '24px 32px 32px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {statCards.map(s => <StatCard key={s.k} {...s}/>)}
+          </div>
+
+          <div className="card" style={{ padding: 20, borderRadius: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div className="eyebrow">Recent transactions</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="chip on">All</button>
+                <button className="btn btn-sm" style={{ marginLeft: 8 }}>Export CSV</button>
+              </div>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  {['TXN', 'Buyer', 'Seller', 'Item', 'Amount', 'Status', ''].map((h, i) => (
+                    <th key={h + i} style={{ textAlign: i === 4 ? 'right' : 'left', padding: '10px 8px', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {txns.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px 8px', color: 'var(--ink-mute)', fontSize: 13 }}>No transactions yet</td></tr>
+                ) : txns.map(r => (
+                  <tr key={r.id} style={{ fontSize: 13.5 }}>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)' }} className="mono">#{r.id?.slice(0, 8)}</td>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)' }}>{r.buyer?.name || r.buyer_id}</td>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)' }}>{r.seller?.name || r.seller_id}</td>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)' }}>{r.listings?.title}</td>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)', textAlign: 'right', fontFamily: 'var(--serif)' }}>{formatPrice(r.amount)}</td>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)' }}>
+                      <span className="pill" style={{ fontSize: 11, padding: '3px 9px', background: 'var(--bg)' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_DOT[r.status] || 'var(--ink-mute)', display: 'inline-block' }}/> {r.status?.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 8px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/order/${r.id}`)}>View <I.ChevronR size={12}/></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Disputes */}
+      {!loading && tab === 'Disputes' && (
+        <section style={{ padding: '24px 32px 32px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {disputes.length === 0 ? (
+            <p className="muted small" style={{ textAlign: 'center', padding: '48px 0' }}>No disputes to review.</p>
+          ) : disputes.map(d => <DisputeCard key={d.id} d={d} onResolve={resolveDispute}/>)}
+        </section>
+      )}
+
+      {/* Users */}
+      {!loading && tab === 'Users' && (
+        <section style={{ padding: '24px 32px 32px' }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-mute)' }}><I.Search size={14}/></span>
+              <input className="input" placeholder="Search by name, email, city…" style={{ paddingLeft: 36, fontSize: 13 }} value={uq} onChange={e => setUq(e.target.value)}/>
+            </div>
+          </div>
+          <div className="card" style={{ padding: 8, borderRadius: 16 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  {['User', 'City', 'Trust', 'Role', 'Verified', ''].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '14px 12px', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map(u => (
+                  <tr key={u.id} style={{ fontSize: 13.5 }}>
+                    <td style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {u.avatar_url
+                          ? <img src={u.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}/>
+                          : <Photo variant="ph-soft" style={{ width: 32, height: 32, borderRadius: '50%' }}/>
+                        }
+                        <span style={{ fontWeight: 500 }}>{u.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)', color: 'var(--ink-mute)' }}>{u.locality || '—'}</td>
+                    <td style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)' }}>
+                      <input className="input" defaultValue={u.trust_score || 0}
+                        style={{ width: 62, padding: '5px 8px', fontSize: 13, textAlign: 'center', background: 'var(--bg)' }}
+                        onBlur={e => overrideTrust(u.id, e.target.value)}/>
+                    </td>
+                    <td style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)' }}>
+                      <span className="pill" style={{ fontSize: 11, padding: '2px 9px', background: u.role === 'admin' ? 'var(--primary)' : 'var(--bg)', color: u.role === 'admin' ? 'var(--primary-ink)' : 'var(--ink)' }}>
+                        {u.role || 'buyer'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)' }}>
+                      <button className={`chip${u.verified ? ' on' : ''}`} style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => toggleVerified(u.id, u.verified)}>
+                        {u.verified ? <><I.Verified size={11}/> Verified</> : 'Not yet'}
+                      </button>
+                    </td>
+                    <td style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/storefront/${u.id}`)}>View store <I.Arrow size={12}/></button>
+                    </td>
+                  </tr>
+                ))}
+                {filteredUsers.length === 0 && (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: '24px 12px', color: 'var(--ink-mute)' }}>No users found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Listings */}
+      {!loading && tab === 'Listings' && (
+        <section style={{ padding: '24px 32px 32px' }}>
+          <div className="card" style={{ padding: 8, borderRadius: 16 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  {['Item', 'Seller', 'Price', 'Status', ''].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '14px 12px', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {listings.map(it => (
+                  <tr key={it.id} style={{ fontSize: 13.5 }}>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {it.images?.[0]
+                          ? <img src={it.images[0]} alt="" style={{ width: 42, height: 42, borderRadius: 8, objectFit: 'cover' }}/>
+                          : <Photo variant="ph-soft" style={{ width: 42, height: 42, borderRadius: 8 }}/>
+                        }
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{it.title}</div>
+                          <div className="small muted" style={{ fontSize: 11 }}>{it.brand} · {it.category}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', color: 'var(--ink-mute)' }}>{it.users?.name || '—'}</td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--serif)' }}>{formatPrice(it.price)}</td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+                      <span className="pill" style={{ fontSize: 11, padding: '3px 9px', background: 'var(--bg)' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }}/> {it.status || 'Active'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
+                      <button className="btn btn-ghost btn-sm" style={{ color: '#C84A3A' }} onClick={() => forceDelist(it.id)}>Delist</button>
+                    </td>
+                  </tr>
+                ))}
+                {listings.length === 0 && (
+                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: '24px 12px', color: 'var(--ink-mute)' }}>No listings</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* No-shows */}
+      {!loading && tab === 'No-shows' && (
+        <section style={{ padding: '24px 32px 32px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {noShows.length === 0 ? (
+            <p className="muted small" style={{ textAlign: 'center', padding: '48px 0' }}>No flagged no-shows.</p>
+          ) : noShows.map(n => (
+            <div key={n.id} className="card" style={{ padding: 18, borderRadius: 14, display: 'flex', alignItems: 'center', gap: 18 }}>
+              {n.listings?.images?.[0]
+                ? <img src={n.listings.images[0]} alt="" style={{ width: 54, height: 54, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}/>
+                : <Photo variant="ph-soft" style={{ width: 54, height: 54, borderRadius: 10, flexShrink: 0 }}/>
+              }
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--ink-mute)' }}>#{n.transaction_id?.slice(0, 8)}</span>
+                  <span style={{ fontSize: 14.5, fontWeight: 500 }}>{n.listings?.title || 'Item'}</span>
+                </div>
+                <div className="small muted" style={{ marginTop: 4 }}>
+                  {new Date(n.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {n.buyer_flagged && <span className="pill" style={{ fontSize: 10, background: '#FFE7DF', color: '#C84A3A', borderColor: 'transparent' }}>Buyer flagged</span>}
+                {n.seller_flagged && <span className="pill" style={{ fontSize: 10, background: '#FFE7DF', color: '#C84A3A', borderColor: 'transparent' }}>Seller flagged</span>}
+              </div>
+              <button className="btn btn-sm" onClick={() => navigate(`/order/${n.transaction_id}`)}>Investigate <I.Arrow size={12}/></button>
+            </div>
+          ))}
+        </section>
+      )}
+    </>
+  );
+}

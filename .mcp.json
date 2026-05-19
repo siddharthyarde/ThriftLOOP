@@ -37,6 +37,16 @@
       "type": "http",
       "url": "https://mcp.stytch.dev/mcp"
     },
+    "stitch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "stitch-mcp"
+      ],
+      "env": {
+        "GOOGLE_CLOUD_PROJECT": "${GOOGLE_CLOUD_PROJECT:-}"
+      }
+    },
     "figma": {
       "type": "http",
       "url": "https://mcp.figma.com/mcp"

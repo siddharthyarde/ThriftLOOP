@@ -11,7 +11,8 @@
     "mcp:shiprocket": "node mcp/shiprocket-server.mjs",
     "dev:client": "npm --workspace client run start",
     "dev:server": "npm --workspace server run dev",
-    "seed": "npm --workspace server run seed"
+    "seed": "npm --workspace server run seed",
+    "seed:internet": "npm --workspace server run seed:internet"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.22.0"
