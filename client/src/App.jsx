@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { supabaseConfigured } from './lib/supabaseClient';
 import Navbar from './components/Navbar';
 import './styles/theme.css';
@@ -40,15 +41,24 @@ const PublicOnlyRoute = ({ children }) => {
   return !user ? children : <Navigate to="/" replace />;
 };
 
-const AppRoutes = () => (
-  <div className="thrift-root">
+const AppRoutes = () => {
+  const { dark } = useTheme();
+  return (
+  <div className="thrift-root" data-mode={dark ? 'dark' : undefined}>
     <Navbar />
     {!supabaseConfigured && (
       <div style={{ background: '#FFFBEB', borderBottom: '1px solid #FDE68A', color: '#92400E', fontSize: 13, padding: '8px 16px', textAlign: 'center' }}>
         ⚠️ Supabase not configured — create <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 4 }}>client/.env</code> with <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 4 }}>REACT_APP_SUPABASE_URL</code> + <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 4 }}>REACT_APP_SUPABASE_ANON_KEY</code>, then restart.
       </div>
     )}
-    <Toaster position="top-right" toastOptions={{ style: { borderRadius: '12px', fontSize: '14px' } }} />
+    <Toaster position="top-right" toastOptions={{
+      style: {
+        borderRadius: '12px', fontSize: '14px',
+        background: dark ? '#2A2825' : '#fff',
+        color: dark ? '#F6F4EE' : '#171614',
+        border: dark ? '1px solid rgba(246,244,238,.1)' : '1px solid rgba(23,22,20,.1)',
+      }
+    }} />
     <Routes>
       <Route path="/"               element={<Home />} />
       <Route path="/listing/:id"    element={<ListingDetail />} />
@@ -71,16 +81,19 @@ const AppRoutes = () => (
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </div>
-);
+  );
+};
 
 const App = () => (
-  <AuthProvider>
-    <NotificationProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </NotificationProvider>
-  </AuthProvider>
+  <ThemeProvider>
+    <AuthProvider>
+      <NotificationProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </NotificationProvider>
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;

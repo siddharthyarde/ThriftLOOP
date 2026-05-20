@@ -38,7 +38,10 @@ export default function Profile() {
       setForm({ name: profile.name || '', locality: profile.locality || '', bio: profile.bio || '' });
     }
     fetchPhotos();
-    api.get('/api/sustainability/impact').then(r => setImpact(r.data)).catch(() => {});
+    api.get('/api/analytics/sustainability').then(r => {
+      const d = r.data;
+      setImpact({ co2_saved_kg: d.co2_saved ?? d.co2_saved_kg ?? 0, water_saved_liters: d.water_saved ?? d.water_saved_liters ?? 0, transactions: d.transactions ?? 0 });
+    }).catch(() => {});
   }, [profile]); // eslint-disable-line
 
   const fetchPhotos = async () => {

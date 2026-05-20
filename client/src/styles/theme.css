@@ -1,21 +1,21 @@
-/* thrift — vintage moss + tan e-commerce */
+/* thrift — ink palette (near-black + gold) */
 :root {
-  --bg:        #FAF6EE;
-  --surface:   #F4EEDF;
-  --surface-2: #E9DFC6;
-  --ink:       #1F2A1F;
-  --ink-2:    #3A4A38;
-  --ink-mute:  #6B6356;
-  --primary:   #2D3A2E;
-  --primary-ink:#FAF6EE;
-  --accent:    #B8956A;
-  --accent-2:  #C9A77E;
-  --sage:      #D9E6CC;
-  --border:    rgba(31,42,31,0.12);
-  --border-2:  rgba(31,42,31,0.22);
-  --shadow-sm: 0 1px 2px rgba(31,42,31,0.06), 0 1px 1px rgba(31,42,31,0.04);
-  --shadow:    0 6px 24px -8px rgba(31,42,31,0.18), 0 2px 6px -2px rgba(31,42,31,0.08);
-  --shadow-lg: 0 24px 60px -20px rgba(31,42,31,0.30);
+  --bg:        #F6F4EE;
+  --surface:   #ECE7DA;
+  --surface-2: #DDD3BD;
+  --ink:       #171614;
+  --ink-2:     #2A2825;
+  --ink-mute:  #6B6657;
+  --primary:   #171614;
+  --primary-ink:#F6F4EE;
+  --accent:    #C8A951;
+  --accent-2:  #DCC074;
+  --sage:      #E5E0CC;
+  --border:    rgba(23,22,20,0.12);
+  --border-2:  rgba(23,22,20,0.22);
+  --shadow-sm: 0 1px 2px rgba(23,22,20,0.06), 0 1px 1px rgba(23,22,20,0.04);
+  --shadow:    0 6px 24px -8px rgba(23,22,20,0.18), 0 2px 6px -2px rgba(23,22,20,0.08);
+  --shadow-lg: 0 24px 60px -20px rgba(23,22,20,0.30);
   --r-sm: 8px;
   --r:    12px;
   --r-lg: 18px;

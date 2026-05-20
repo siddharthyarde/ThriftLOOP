@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { useTheme } from '../context/ThemeContext';
 import * as I from './Icons';
 import { Avatar } from './Shared';
 
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
   const { notifications, unreadCount } = useNotifications();
+  const { dark, toggleDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -75,6 +77,24 @@ export default function Navbar() {
       </div>
 
       <div style={{ display:"flex", alignItems:"center", gap: 8, marginLeft:"auto" }}>
+        {/* Dark mode toggle — pill switch inspired by TweaksPanel */}
+        <button
+          onClick={toggleDark}
+          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+          style={{
+            display:"inline-flex", alignItems:"center", gap:6,
+            padding:"6px 12px 6px 8px", borderRadius:999,
+            border:"1px solid var(--border-2)", background:"var(--surface)",
+            color:"var(--ink-mute)", cursor:"pointer",
+            fontSize:12, fontWeight:500, letterSpacing:".01em",
+            transition:"all .2s ease",
+          }}>
+          {dark
+            ? <><I.Sun  size={14} style={{ color:"var(--accent)" }}/> Light</>
+            : <><I.Moon size={14}/> Dark</>
+          }
+        </button>
+
         {user ? (
           <>
             <button className="btn btn-sm" style={{ borderRadius: 999 }} onClick={() => navigate('/create-listing')}>

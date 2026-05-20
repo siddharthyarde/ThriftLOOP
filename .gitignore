@@ -52,3 +52,17 @@ Desktop.ini
 
 # Local-only files
 *.local
+*.err
+
+# Dev/reference folder (local tooling only, not for GitHub)
+_dev/
+
+# Runtime output
+uploads/
+screenshots/
+
+# Playwright test artifacts
+.playwright-mcp/
+
+# Claude Code local settings
+.claude/settings.local.json
